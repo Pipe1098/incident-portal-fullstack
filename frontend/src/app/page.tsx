@@ -24,9 +24,17 @@ export default function Home() {
     setIsLoading(true)
     try {
       const data = await getTickets()
-      setTickets(data)
-    } catch {
+      // Solo actualiza si recibimos datos válidos
+      if (Array.isArray(data) && data.length > 0) {
+        setTickets(data)
+      } else if (Array.isArray(data)) {
+        // Si está vacío pero es válido, actualiza también
+        setTickets(data)
+      }
+    } catch (error) {
+      console.error("Error cargando tickets:", error)
       toast.error("No se pudieron cargar los tickets")
+      // NO limpiamos los tickets en caso de error - mantienen los datos actuales
     } finally {
       setIsLoading(false)
     }

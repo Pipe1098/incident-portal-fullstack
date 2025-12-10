@@ -38,13 +38,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const url = status ? `${API_BASE_URL}/tickets?status=${status}` : `${API_BASE_URL}/tickets`
+    console.log(`📡 Llamando a API backend: ${url}`)
     const response = await fetch(url, { headers })
 
-    if (!response.ok) throw new Error("API Error")
+    if (!response.ok) {
+      console.error(`❌ Error API (${response.status}): ${response.statusText}`)
+      throw new Error(`API Error: ${response.status}`)
+    }
 
     const data = await response.json()
+    console.log(`✅ Datos recibidos del backend: ${data.length || 0} tickets`)
     return NextResponse.json(data)
-  } catch {
+  } catch (error) {
+    console.error("⚠️  Error al llamar API backend, usando mock data:", error)
     // Fallback to mock data on error
     let tickets = getLocalTickets()
     if (status) {
