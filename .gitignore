@@ -1,0 +1,55 @@
+# Dependencies
+backend/node_modules/
+backend/src/node_modules/
+frontend/node_modules/
+package-lock.json
+yarn.lock
+
+# AWS SAM
+backend/.aws-sam/
+backend/samconfig.toml
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/.next-env.d.ts
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swc
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# OS Files
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Build outputs
+backend/build/
+backend/dist/
+frontend/build/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+.env.backup
+.env.production.local
