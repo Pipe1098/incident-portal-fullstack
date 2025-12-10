@@ -1,0 +1,208 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "Portal de Seguimiento de Incidencias - Backend Serverless API REST para\
+  \ gesti\xF3n de tickets con Lambda, DynamoDB y API Gateway\n"
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs18.x
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME:
+          Ref: TicketsTable
+        CORS_ORIGIN: '*'
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+    - dev
+    - staging
+    - prod
+    Description: Deployment stage
+Resources:
+  TicketsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: tickets-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      - AttributeName: status
+        AttributeType: S
+      - AttributeName: createdAt
+        AttributeType: S
+      KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: StatusIndex
+        KeySchema:
+        - AttributeName: status
+          KeyType: HASH
+        - AttributeName: createdAt
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: Stage
+  TicketsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name:
+        Fn::Sub: tickets-api-${Stage}
+      StageName:
+        Ref: Stage
+      Cors:
+        AllowMethods: '''GET,POST,PATCH,DELETE,OPTIONS'''
+        AllowHeaders: '''Content-Type,X-Api-Key,Authorization'''
+        AllowOrigin: '''*'''
+      Auth:
+        ApiKeyRequired: true
+        UsagePlan:
+          CreateUsagePlan: PER_API
+          Description: Usage plan for Tickets API
+          Throttle:
+            BurstLimit: 100
+            RateLimit: 50
+          Quota:
+            Limit: 10000
+            Period: MONTH
+  CreateTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: create-ticket-${Stage}
+      CodeUri: CreateTicketFunction
+      Handler: handlers/create-ticket.handler
+      Description: Creates a new ticket
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TicketsTable
+      Events:
+        CreateTicket:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: TicketsApi
+            Path: /tickets
+            Method: POST
+            Auth:
+              ApiKeyRequired: true
+    Metadata:
+      SamResourceId: CreateTicketFunction
+  GetTicketsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: get-tickets-${Stage}
+      CodeUri: GetTicketsFunction
+      Handler: handlers/get-tickets.handler
+      Description: Get all tickets or filter by status
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: TicketsTable
+      Events:
+        GetTickets:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: TicketsApi
+            Path: /tickets
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+    Metadata:
+      SamResourceId: GetTicketsFunction
+  GetTicketByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: get-ticket-by-id-${Stage}
+      CodeUri: GetTicketByIdFunction
+      Handler: handlers/get-ticket-by-id.handler
+      Description: Get a single ticket by ID
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: TicketsTable
+      Events:
+        GetTicketById:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: TicketsApi
+            Path: /tickets/{id}
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+    Metadata:
+      SamResourceId: GetTicketByIdFunction
+  UpdateTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: update-ticket-${Stage}
+      CodeUri: UpdateTicketFunction
+      Handler: handlers/update-ticket.handler
+      Description: Update ticket status or other fields
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TicketsTable
+      Events:
+        UpdateTicket:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: TicketsApi
+            Path: /tickets/{id}
+            Method: PATCH
+            Auth:
+              ApiKeyRequired: true
+    Metadata:
+      SamResourceId: UpdateTicketFunction
+  DeleteTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: delete-ticket-${Stage}
+      CodeUri: DeleteTicketFunction
+      Handler: handlers/delete-ticket.handler
+      Description: Delete a ticket
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TicketsTable
+      Events:
+        DeleteTicket:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: TicketsApi
+            Path: /tickets/{id}
+            Method: DELETE
+            Auth:
+              ApiKeyRequired: true
+    Metadata:
+      SamResourceId: DeleteTicketFunction
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value:
+      Fn::Sub: https://${TicketsApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
+  ApiKeyId:
+    Description: API Key ID (retrieve value from API Gateway console)
+    Value:
+      Ref: TicketsApiApiKey
+  TableName:
+    Description: DynamoDB Table Name
+    Value:
+      Ref: TicketsTable

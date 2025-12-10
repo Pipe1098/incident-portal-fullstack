@@ -1,132 +1,189 @@
-AWSTemplateFormatVersion: 2010-09-09
-Description: >-
-  config
-Transform:
-- AWS::Serverless-2016-10-31
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Portal de Seguimiento de Incidencias - Backend Serverless
+  API REST para gestión de tickets con Lambda, DynamoDB y API Gateway
 
-# Resources declares the AWS resources that you want to include in the stack
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
-Resources:
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
-  # This is a Lambda function config associated with the source code: get-all-items.js
-  getAllItemsFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/get-all-items.getAllItemsHandler
-      Runtime: nodejs20.x
-      Architectures:
-      - x86_64
-      MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP get method to get all items 
-        from a DynamoDB table.
-      Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-      - DynamoDBCrudPolicy:
-          TableName: !Ref SampleTable
-      Environment:
-        Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /
-            Method: GET
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
-  # This is a Lambda function config associated with the source code: get-by-id.js
-  getByIdFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/get-by-id.getByIdHandler
-      Runtime: nodejs20.x
-      Architectures:
-      - x86_64
-      MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP get method to get one item 
-        by id from a DynamoDB table.
-      Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-      - DynamoDBCrudPolicy:
-          TableName: !Ref SampleTable
-      Environment:
-        Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /{id}
-            Method: GET
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
-  # This is a Lambda function config associated with the source code: put-item.js
-  putItemFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/put-item.putItemHandler
-      Runtime: nodejs20.x
-      Architectures:
-      - x86_64
-      MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP post method to add one item 
-        to a DynamoDB table.
-      Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-      - DynamoDBCrudPolicy:
-          TableName: !Ref SampleTable
-      Environment:
-        Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /
-            Method: POST
-  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
-
-  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
-  SampleTable:
-    Type: AWS::Serverless::SimpleTable
-    Properties:
-      PrimaryKey:
-        Name: id
-        Type: String
-      ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
-
-  ApplicationResourceGroup:
-    Type: AWS::ResourceGroups::Group
-    Properties:
-      Name:
-        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
-      ResourceQuery:
-        Type: CLOUDFORMATION_STACK_1_0
-  ApplicationInsightsMonitoring:
-    Type: AWS::ApplicationInsights::Application
-    Properties:
-      ResourceGroupName:
-        Ref: ApplicationResourceGroup
-      AutoConfigurationEnabled: 'true'
-Outputs:
-  WebEndpoint:
-    Description: API Gateway endpoint URL for Prod stage
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/"
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    LoggingConfig:
-      LogFormat: JSON
+    Timeout: 30
+    Runtime: nodejs18.x
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref TicketsTable
+        CORS_ORIGIN: '*'
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment stage
+
+Resources:
+  # DynamoDB Table for Tickets
+  TicketsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub tickets-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Environment
+          Value: !Ref Stage
+
+  # API Gateway
+  TicketsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub tickets-api-${Stage}
+      StageName: !Ref Stage
+      Cors:
+        AllowMethods: "'GET,POST,PATCH,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Api-Key,Authorization'"
+        AllowOrigin: "'*'"
+      Auth:
+        ApiKeyRequired: true
+        UsagePlan:
+          CreateUsagePlan: PER_API
+          Description: Usage plan for Tickets API
+          Throttle:
+            BurstLimit: 100
+            RateLimit: 50
+          Quota:
+            Limit: 10000
+            Period: MONTH
+
+  # Lambda Functions
+  CreateTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub create-ticket-${Stage}
+      CodeUri: src/
+      Handler: handlers/create-ticket.handler
+      Description: Creates a new ticket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TicketsTable
+      Events:
+        CreateTicket:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TicketsApi
+            Path: /tickets
+            Method: POST
+            Auth: # <-- FIX: SECCIÓN AÑADIDA
+              ApiKeyRequired: true # <-- FIX: REQUERIR API KEY
+  
+  GetTicketsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub get-tickets-${Stage}
+      CodeUri: src/
+      Handler: handlers/get-tickets.handler
+      Description: Get all tickets or filter by status
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TicketsTable
+      Events:
+        GetTickets:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TicketsApi
+            Path: /tickets
+            Method: GET
+            Auth: # <-- FIX: SECCIÓN AÑADIDA
+              ApiKeyRequired: true # <-- FIX: REQUERIR API KEY
+
+  GetTicketByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub get-ticket-by-id-${Stage}
+      CodeUri: src/
+      Handler: handlers/get-ticket-by-id.handler
+      Description: Get a single ticket by ID
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TicketsTable
+      Events:
+        GetTicketById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TicketsApi
+            Path: /tickets/{id}
+            Method: GET
+            Auth: # <-- FIX: SECCIÓN AÑADIDA
+              ApiKeyRequired: true # <-- FIX: REQUERIR API KEY
+
+  UpdateTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub update-ticket-${Stage}
+      CodeUri: src/
+      Handler: handlers/update-ticket.handler
+      Description: Update ticket status or other fields
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TicketsTable
+      Events:
+        UpdateTicket:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TicketsApi
+            Path: /tickets/{id}
+            Method: PATCH
+            Auth: # <-- FIX: SECCIÓN AÑADIDA
+              ApiKeyRequired: true # <-- FIX: REQUERIR API KEY
+
+  DeleteTicketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub delete-ticket-${Stage}
+      CodeUri: src/
+      Handler: handlers/delete-ticket.handler
+      Description: Delete a ticket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TicketsTable
+      Events:
+        DeleteTicket:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TicketsApi
+            Path: /tickets/{id}
+            Method: DELETE
+            Auth: # <-- FIX: SECCIÓN AÑADIDA
+              ApiKeyRequired: true # <-- FIX: REQUERIR API KEY
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${TicketsApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
+  ApiKeyId:
+    Description: API Key ID (retrieve value from API Gateway console)
+    Value: !Ref TicketsApiApiKey
+  TableName:
+    Description: DynamoDB Table Name
+    Value: !Ref TicketsTable

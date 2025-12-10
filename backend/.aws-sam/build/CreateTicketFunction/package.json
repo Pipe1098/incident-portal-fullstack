@@ -1,0 +1,17 @@
+{
+  "name": "tickets-backend",
+  "version": "1.0.0",
+  "description": "Backend serverless para Portal de Seguimiento de Incidencias",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.400.0",
+    "@aws-sdk/lib-dynamodb": "^3.400.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
