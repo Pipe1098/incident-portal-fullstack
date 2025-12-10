@@ -2,9 +2,10 @@ import { type NextRequest, NextResponse } from "next/server"
 import type { Ticket, TicketStatus } from "@/lib/types"
 import { getLocalTickets, addLocalTicket } from "@/lib/mock-data"
 
-// Server-side config 
-const API_BASE_URL = process.env.API_URL
-const API_KEY = process.env.API_KEY
+// Server-side config - lee variables de entorno
+// Para desarrollo local: API_URL=http://localhost:3001 API_KEY=dev-key
+const API_BASE_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL
+const API_KEY = process.env.API_KEY || process.env.NEXT_PUBLIC_API_KEY
 
 const headers = {
   "Content-Type": "application/json",
@@ -13,7 +14,13 @@ const headers = {
 
 // Helper to check if we should use mock data
 function useMockData() {
-  return !API_BASE_URL || !API_KEY
+  const shouldUseMock = !API_BASE_URL || !API_KEY
+  if (shouldUseMock) {
+    console.log("⚠️  Usando MOCK DATA - API_BASE_URL o API_KEY no configurados")
+    console.log(`   API_BASE_URL: ${API_BASE_URL || "❌ NO DEFINIDA"}`)
+    console.log(`   API_KEY: ${API_KEY ? "✅ Configurada" : "❌ NO DEFINIDA"}`)
+  }
+  return shouldUseMock
 }
 
 // GET /api/tickets - Get all tickets or filter by status

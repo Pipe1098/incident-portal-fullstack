@@ -1,13 +1,15 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { toast } from "sonner"
 import type { Ticket, TicketStatus, CreateTicketInput } from "@/lib/types"
 import { getTickets, createTicket, updateTicket, deleteTicket } from "@/lib/api"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { TicketStats } from "@/components/ticket-stats"
 import { TicketFilters } from "@/components/ticket-filters"
 import { TicketTable } from "@/components/ticket-table"
-import { toast } from "sonner"
+import { CreateTicketDialog } from "@/components/create-ticket-dialog"
+import { TicketDetailDialog } from "@/components/ticket-detail-dialog"
 
 export default function Home() {
   const [tickets, setTickets] = useState<Ticket[]>([])
@@ -15,6 +17,8 @@ export default function Home() {
   const [currentFilter, setCurrentFilter] = useState<TicketStatus | "ALL">("ALL")
   const [isLoading, setIsLoading] = useState(true)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
   const loadTickets = useCallback(async () => {
     setIsLoading(true)
@@ -45,7 +49,7 @@ export default function Home() {
       const newTicket = await createTicket(input)
       setTickets((prev) => [newTicket, ...prev])
       setIsCreateDialogOpen(false)
-      toast.success("El ticket se ha creado correctamente")
+      toast.success("Ticket creado correctamente")
     } catch {
       toast.error("No se pudo crear el ticket")
     }
@@ -55,8 +59,15 @@ export default function Home() {
     try {
       const updated = await updateTicket(id, { status })
       setTickets((prev) => prev.map((t) => (t.id === id ? updated : t)))
-      const statusText = status === "OPEN" ? "Abierto" : status === "IN_PROGRESS" ? "En Progreso" : status === "RESOLVED" ? "Resuelto" : "Cerrado"
-      toast.success(`El ticket ahora está ${statusText}`)
+      const statusText =
+        status === "OPEN"
+          ? "Abierto"
+          : status === "IN_PROGRESS"
+            ? "En Progreso"
+            : status === "RESOLVED"
+              ? "Resuelto"
+              : "Cerrado"
+      toast.success(`Estado actualizado a ${statusText}`)
     } catch {
       toast.error("No se pudo actualizar el estado")
     }
@@ -66,15 +77,15 @@ export default function Home() {
     try {
       await deleteTicket(id)
       setTickets((prev) => prev.filter((t) => t.id !== id))
-      toast.success("El ticket se ha eliminado correctamente")
+      toast.success("Ticket eliminado correctamente")
     } catch {
       toast.error("No se pudo eliminar el ticket")
     }
   }
 
   const handleViewTicket = (ticket: Ticket) => {
-    // TODO: Implementar modal o página de detalle del ticket
-    console.log("Ver ticket:", ticket)
+    setSelectedTicket(ticket)
+    setIsDetailDialogOpen(true)
   }
 
   return (
@@ -84,6 +95,7 @@ export default function Home() {
         onRefresh={loadTickets}
         isLoading={isLoading}
       />
+
       <main className="container mx-auto px-4 py-8 space-y-8">
         <TicketStats tickets={tickets} />
 
@@ -101,6 +113,14 @@ export default function Home() {
           />
         </div>
       </main>
+
+      <CreateTicketDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreateTicket}
+      />
+
+      <TicketDetailDialog ticket={selectedTicket} open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen} />
     </div>
   )
 }
