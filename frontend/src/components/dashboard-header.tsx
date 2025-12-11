@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { ThemeSwitcher } from "@/components/theme-switcher"
 import { Plus, RefreshCw } from "lucide-react"
 
 interface DashboardHeaderProps {
@@ -19,6 +20,7 @@ export function DashboardHeader({ onCreateTicket, onRefresh, isLoading }: Dashbo
             <p className="text-sm text-muted-foreground">Sistema de seguimiento y gestión de tickets</p>
           </div>
           <div className="flex gap-2">
+            <ThemeSwitcher />
             <Button variant="secondary" size="sm" onClick={onRefresh} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
               Actualizar
