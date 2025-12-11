@@ -4,7 +4,6 @@ version = 0.1
 stack_name = "tickets-api-dev"
 resolve_s3 = true
 s3_prefix = "tickets-api-dev"
-region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "Stage=\"dev\""

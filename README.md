@@ -14,22 +14,8 @@ Sistema fullstack serverless para gestión de tickets/incidencias, construido co
 
 ## 🏗️ Arquitectura
 
-\`\`\`
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│                 │     │                  │     │                 │
-│   Next.js App   │────▶│   API Gateway    │────▶│  Lambda Funcs   │
-│   (Frontend)    │     │   (REST API)     │     │  (Node.js 18)   │
-│                 │     │                  │     │                 │
-└─────────────────┘     └──────────────────┘     └────────┬────────┘
-                                                          │
-                                                          ▼
-                                                ┌─────────────────┐
-                                                │                 │
-                                                │    DynamoDB     │
-                                                │  (Tickets Table)│
-                                                │                 │
-                                                └─────────────────┘
-\`\`\`
+![Arquitectura de la app](/frontend/public/Arquitectura.png)
+
 
 ## 📁 Estructura del Proyecto
 
@@ -87,7 +73,7 @@ incident-portal-fullstack/
 
 ### Frontend (Next.js)
 
-\`\`\`bash
+```bash
 # Instalar dependencias
 npm install
 
@@ -95,7 +81,7 @@ npm install
 npm run dev
 
 # Abrir http://localhost:3000
-\`\`\`
+```
 
 > El frontend incluye datos mock para funcionar sin backend.
 
@@ -106,7 +92,7 @@ npm run dev
 - [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
 - [Docker](https://www.docker.com/) (para ejecución local)
 
-\`\`\`bash
+```bash
 # Navegar al backend
 cd backend
 
@@ -117,11 +103,11 @@ cd src && npm install && cd ..
 sam local start-api --port 3001
 
 # El API estará disponible en http://localhost:3001
-\`\`\`
+```
 
 #### Probar con DynamoDB Local (opcional)
 
-\`\`\`bash
+```bash
 # Ejecutar DynamoDB local con Docker
 docker run -p 8000:8000 amazon/dynamodb-local
 
@@ -133,13 +119,13 @@ aws dynamodb create-table \
   --global-secondary-indexes '[{"IndexName":"StatusIndex","KeySchema":[{"AttributeName":"status","KeyType":"HASH"},{"AttributeName":"createdAt","KeyType":"RANGE"}],"Projection":{"ProjectionType":"ALL"}}]' \
   --billing-mode PAY_PER_REQUEST \
   --endpoint-url http://localhost:8000
-\`\`\`
+```
 
 ## ☁️ Despliegue en AWS
 
 ### 1. Desplegar Backend
 
-\`\`\`bash
+```bash
 cd backend
 
 # Build
@@ -150,7 +136,7 @@ sam deploy --guided
 
 # Deploy (siguientes veces)
 sam deploy
-\`\`\`
+```
 
 El comando `sam deploy --guided` te preguntará:
 - **Stack Name**: `tickets-api-dev`
@@ -170,14 +156,14 @@ Después del deploy, obtén el API Key desde la consola de AWS:
 
 Crea un archivo `.env.local` en la raíz del proyecto:
 
-\`\`\`env
+```env
 NEXT_PUBLIC_API_URL=https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/dev
 NEXT_PUBLIC_API_KEY=tu-api-key-aqui
-\`\`\`
+```
 
 ### 4. Desplegar Frontend (Vercel)
 
-\`\`\`bash
+```bash
 # Instalar Vercel CLI
 npm i -g vercel
 
@@ -185,7 +171,7 @@ npm i -g vercel
 vercel
 
 # Configurar variables de entorno en Vercel Dashboard
-\`\`\`
+```
 
 ## 📡 API Endpoints
 
@@ -200,7 +186,7 @@ vercel
 
 ### Ejemplo: Crear Ticket
 
-\`\`\`bash
+```bash
 curl -X POST https://api-url/dev/tickets \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_API_KEY" \
@@ -210,7 +196,7 @@ curl -X POST https://api-url/dev/tickets \
     "priority": "CRITICAL",
     "createdBy": "usuario@empresa.com"
   }'
-\`\`\`
+```
 
 ## 🔐 Seguridad
 
