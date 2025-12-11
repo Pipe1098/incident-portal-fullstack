@@ -2,6 +2,16 @@
 
 Sistema fullstack serverless para gestión de tickets/incidencias, construido con **Next.js** (Frontend) y **AWS SAM** (Backend: Lambda, DynamoDB, API Gateway).
 
+## 🚀 Deploy en Vivo
+
+[![Ver en Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?style=for-the-badge&logo=vercel)](https://incident-portal-fullstack.vercel.app/)
+
+### Demo
+
+![Portal de Incidencias Demo](/frontend/public/demo.gif)
+
+*Funcionalidades: crear tickets, filtrar por estado, actualizar y eliminar tickets, cambiar tema claro/oscuro.*
+
 ## 📋 Características
 
 - ✅ **Crear tickets** con título, descripción, prioridad y asignación
@@ -9,8 +19,11 @@ Sistema fullstack serverless para gestión de tickets/incidencias, construido co
 - ✅ **Actualizar estado** de tickets
 - ✅ **Eliminar tickets**
 - ✅ **Interfaz responsive** con tema oscuro profesional
+- ✅ **Switch de tema** claro/oscuro en el header
 - ✅ **API Key** para seguridad básica
 - ✅ **Índice secundario** en DynamoDB para consultas por estado
+- ✅ **Pruebas unitarias e integración** con Vitest y React Testing Library
+- ✅ **CI/CD** con GitHub Actions y Vercel
 
 ## 🏗️ Arquitectura
 
