@@ -5,19 +5,17 @@ import { Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function ThemeSwitcher() {
-  const [isDark, setIsDark] = useState(false)
-  const [isMounted, setIsMounted] = useState(false)
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('theme')
+      if (stored) return stored === 'dark'
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+    } catch {
+      return false
+    }
+  })
 
-  useEffect(() => {
-    setIsMounted(true)
-    // Check localStorage and system preference
-    const isDarkMode = localStorage.getItem("theme") === "dark" 
-      || (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches)
-    setIsDark(isDarkMode)
-    applyTheme(isDarkMode)
-  }, [])
-
-  const applyTheme = (dark: boolean) => {
+  function applyTheme(dark: boolean) {
     const html = document.documentElement
     if (dark) {
       html.classList.add("dark")
@@ -28,13 +26,21 @@ export function ThemeSwitcher() {
     }
   }
 
+  useEffect(() => {
+    // Ensure document reflect the initial preference
+    applyTheme(isDark)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const toggleTheme = () => {
-    const newIsDark = !isDark
-    setIsDark(newIsDark)
-    applyTheme(newIsDark)
+    setIsDark((prev) => {
+      const next = !prev
+      applyTheme(next)
+      return next
+    })
   }
 
-  if (!isMounted) return null
+  
 
   return (
     <Button

@@ -13,14 +13,14 @@ const headers = {
 }
 
 // Helper to check if we should use mock data
-function useMockData() {
-  const shouldUseMock = !API_BASE_URL || !API_KEY
-  if (shouldUseMock) {
+function shouldUseMock() {
+  const shouldUse = !API_BASE_URL || !API_KEY
+  if (shouldUse) {
     console.log("⚠️  Usando MOCK DATA - API_BASE_URL o API_KEY no configurados")
     console.log(`   API_BASE_URL: ${API_BASE_URL || "❌ NO DEFINIDA"}`)
     console.log(`   API_KEY: ${API_KEY ? "✅ Configurada" : "❌ NO DEFINIDA"}`)
   }
-  return shouldUseMock
+  return shouldUse
 }
 
 // GET /api/tickets - Get all tickets or filter by status
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const status = searchParams.get("status") as TicketStatus | null
 
-  if (useMockData()) {
+  if (shouldUseMock()) {
     let tickets = getLocalTickets()
     if (status) {
       tickets = tickets.filter((t) => t.status === status)
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const body = await request.json()
 
-  if (useMockData()) {
+  if (shouldUseMock()) {
     const newTicket: Ticket = {
       id: String(Date.now()),
       ...body,

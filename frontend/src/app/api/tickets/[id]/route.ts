@@ -10,7 +10,7 @@ const headers = {
   "x-api-key": API_KEY || "",
 }
 
-function useMockData() {
+function shouldUseMock() {
   return !API_BASE_URL || !API_KEY
 }
 
@@ -18,7 +18,7 @@ function useMockData() {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  if (useMockData()) {
+  if (shouldUseMock()) {
     const ticket = getLocalTickets().find((t) => t.id === id)
     if (!ticket) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 })
@@ -50,7 +50,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { id } = await params
   const body = await request.json()
 
-  if (useMockData()) {
+  if (shouldUseMock()) {
     const updated = updateLocalTicket(id, body)
     if (!updated) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 })
@@ -85,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  if (useMockData()) {
+  if (shouldUseMock()) {
     const ticket = getLocalTickets().find((t) => t.id === id)
     if (!ticket) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 })
